@@ -16,45 +16,37 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
-    // 1. Nettoyage de la saisie (retire les espaces accidentels)
-    const usernameClean = identifiant.trim();
+    // Nettoyage complet : retrait des espaces et conversion automatique en minuscules
+    const usernameClean = identifiant.trim().toLowerCase();
     const passwordClean = password.trim();
 
-    console.log("Tentative de connexion avec l'identifiant :", `"${usernameClean}"`);
-
     try {
-      // 2. Requête Supabase
       const { data, error: supabaseError } = await supabase
         .from('personnels')
         .select('*')
         .eq('nom', usernameClean)
         .eq('password_text', passwordClean)
-        .maybeSingle(); // Évite les crashs si plusieurs lignes ou aucune ne correspondent
+        .maybeSingle();
 
       if (supabaseError) {
-        console.error("Erreur de communication Supabase :", supabaseError);
         setError("Erreur technique de communication avec la base de données.");
         setLoading(false);
         return;
       }
 
-      console.log("Réponse reçue de Supabase :", data);
-
       if (data) {
-        // Sauvegarde des données de session locale
         localStorage.setItem('user_nom', data.nom);
         localStorage.setItem('user_departement', data.departement);
         
-        // Journalisation de la visite
+        // Enregistrement dans la table des logs
         await supabase.from('visiteurs_logs').insert({ nom_visiteur: data.nom });
         
-        // Redirection vers le tableau de bord
+        // Redirection
         router.push('/dashboard');
       } else {
-        setError('Identifiant ou mot de passe incorrect (Vérifiez les majuscules).');
+        setError('Identifiant ou mot de passe incorrect (Vérifiez votre saisie).');
       }
     } catch (err) {
-      console.error("Erreur inattendue :", err);
       setError("Une erreur inattendue est survenue.");
     } finally {
       setLoading(false);
@@ -68,7 +60,7 @@ export default function LoginPage() {
         <div className="flex justify-center">
           <Image 
             src="/logo.jpeg" 
-            alt="Logo de l'Entreprise" 
+            alt="Logo" 
             width={140} 
             height={70} 
             className="object-contain"
@@ -85,7 +77,7 @@ export default function LoginPage() {
             type="text"
             value={identifiant}
             onChange={(e) => setIdentifiant(e.target.value)}
-            placeholder="Ex: root ou personnel"
+            placeholder="root ou personnel"
             required 
             disabled={loading}
             className="w-full p-3 border rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700" 
@@ -98,6 +90,7 @@ export default function LoginPage() {
             type="password" 
             value={password} 
             onChange={(e) => setPassword(e.target.value)} 
+            placeholder="••••••••"
             required 
             disabled={loading}
             className="w-full p-3 border rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700" 
